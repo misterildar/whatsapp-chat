@@ -1,38 +1,26 @@
-"use client";
-import axios from "axios";
-import React, { useState, useEffect } from "react";
+'use client';
+import axios from 'axios';
+import React, { useState, useEffect } from 'react';
 
-import { Login } from "../login/Login";
-import { ArrayMessage } from "../types";
-import { apiUrl, seconds } from "../constants";
-import { Messages } from "../message/Messages";
-import { ChatFooter } from "../chat-footer/ChatFooter";
+import { Login } from '../login/Login';
+import { ArrayMessage } from '../types';
+import { API_URL, SECONDS } from '../constants';
+import { Messages } from '../message/Messages';
+import { ChatFooter } from '../chat-footer/ChatFooter';
 
 export const WhatsAppChat = () => {
-  const [message, setMessage] = useState("");
-  const [idInstance, setIdInstance] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
+  const [message, setMessage] = useState('');
+  const [idInstance, setIdInstance] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [messages, setMessages] = useState<ArrayMessage[]>([]);
-  const [apiTokenInstance, setApiTokenInstance] = useState("");
+  const [apiTokenInstance, setApiTokenInstance] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  // Эффект для загрузки сохраненных данных из localStorage
-  useEffect(() => {
-    const savedIdInstance = localStorage.getItem("idInstance");
-    const savedApiTokenInstance = localStorage.getItem("apiTokenInstance");
-    if (savedIdInstance && savedApiTokenInstance) {
-      setIdInstance(savedIdInstance);
-      setApiTokenInstance(savedApiTokenInstance);
-      setRememberMe(true);
-    }
-  }, []);
 
   // Функция для отправки сообщения
   const sendMessage = async (phoneNumber: string, message: string) => {
     try {
       const response = await axios.post(
-        `${apiUrl}/waInstance${idInstance}/sendMessage/${apiTokenInstance}`,
+        `${API_URL}/waInstance${idInstance}/sendMessage/${apiTokenInstance}`,
         {
           chatId: `${phoneNumber}@c.us`,
           message,
@@ -41,14 +29,13 @@ export const WhatsAppChat = () => {
       // Добавляем отправленное сообщение в состояние
       setMessages((prevMessages) => [
         ...prevMessages,
-        { body: message, sender: "ваш номер" }, // Помечаем как отправленное
+        { body: message, sender: 'отправленное' },
       ]);
-      // Удаляем уведомление (если оно есть)
       if (response.data.receiptId) {
         await deleteNotification(response.data.receiptId);
       }
     } catch (error) {
-      console.error("Ошибка при отправке сообщения:", error);
+      console.error('Ошибка при отправке сообщения:', error);
     }
   };
 
@@ -56,22 +43,25 @@ export const WhatsAppChat = () => {
   const fetchMessages = async () => {
     try {
       const response = await axios.get(
-        `${apiUrl}/waInstance${idInstance}/receiveNotification/${apiTokenInstance}`,
+        `${API_URL}/waInstance${idInstance}/receiveNotification/${apiTokenInstance}`,
         {
           params: {
-            receiveTimeout: seconds,
+            receiveTimeout: SECONDS,
           },
         }
       );
-      // Проверяем, есть ли данные в ответе
+      if (response.status !== 200) {
+        console.error('Ошибка при получении сообщений:', response.data);
+        return;
+      }
+      if (response.data?.body.typeWebhook === 'outgoingAPIMessageReceived') {
+        deleteNotification(response.data.receiptId);
+        return;
+      }
       if (response.data && response.data.body) {
         const messageData = response.data.body.messageData;
-        if (response.data.body.typeWebhook === "outgoingAPIMessageReceived") {
-          deleteNotification(response.data.receiptId);
-          return;
-        }
         if (messageData) {
-          let newMessage = "";
+          let newMessage = '';
           if (
             messageData.extendedTextMessageData &&
             messageData.extendedTextMessageData.text
@@ -85,29 +75,27 @@ export const WhatsAppChat = () => {
           }
           if (newMessage) {
             const receiptId = response.data.receiptId;
+            // Обновляем состояние, добавляя новое сообщение в массив
             setMessages((prevMessages) => [
               ...prevMessages,
-              { body: newMessage, sender: "получатель" },
+              { body: newMessage, sender: 'получатель' },
             ]);
             await deleteNotification(receiptId);
           }
         } else {
+          // Если messageData отсутствует, проверяем receiptId
           const receiptId = response.data.receiptId;
           if (receiptId) {
             await deleteNotification(receiptId);
-          } else {
-            console.warn("Нет данных в ответе API и receiptId:", response.data);
           }
         }
-      } else {
-        console.warn("Нет данных в ответе API:", response.data);
       }
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        console.error("Ошибка при получении сообщений:", error.message);
-        console.error("Детали ошибки:", error.response?.data);
+        console.error('Ошибка при получении сообщений:', error.message);
+        console.error('Детали ошибки:', error.response?.data);
       } else {
-        console.error("Неизвестная ошибка:", error);
+        console.error('Неизвестная ошибка:', error);
       }
     }
   };
@@ -115,23 +103,10 @@ export const WhatsAppChat = () => {
   const deleteNotification = async (receiptId: number) => {
     try {
       await axios.delete(
-        `${apiUrl}/waInstance${idInstance}/deleteNotification/${apiTokenInstance}/${receiptId}`
+        `${API_URL}/waInstance${idInstance}/deleteNotification/${apiTokenInstance}/${receiptId}`
       );
-      console.log(`Уведомление с ID ${receiptId} успешно удалено.`);
     } catch (error) {
-      console.error("Ошибка при удалении уведомления:", error);
-    }
-  };
-
-  // Обработка авторизации
-  const handleLogin = () => {
-    if (idInstance && apiTokenInstance) {
-      setIsAuthenticated(true);
-      if (rememberMe) {
-        localStorage.setItem("idInstance", idInstance);
-        localStorage.setItem("apiTokenInstance", apiTokenInstance);
-      }
-      fetchMessages(); // Получаем сообщения сразу после авторизации
+      console.error('Ошибка при удалении уведомления:', error);
     }
   };
 
@@ -139,11 +114,11 @@ export const WhatsAppChat = () => {
   const handleSendMessage = () => {
     if (phoneNumber && message) {
       sendMessage(phoneNumber, message);
-      setMessage("");
+      setMessage('');
     }
   };
 
-  // Пример вызова fetchMessages с интервалом
+  // Вызов fetchMessages с интервалом
   useEffect(() => {
     if (isAuthenticated) {
       const interval = setInterval(fetchMessages, 5000);
@@ -152,21 +127,20 @@ export const WhatsAppChat = () => {
   }, [isAuthenticated]);
 
   return (
-    <div className="flex  flex-col items-center h-screen  bg-[#EDEDED]">
+    <div className='flex  flex-col items-center h-screen bg-[#EDEDED]'>
       {!isAuthenticated ? (
         <Login
-          rememberMe={rememberMe}
           idInstance={idInstance}
-          handleLogin={handleLogin}
           setIdInstance={setIdInstance}
-          setRememberMe={setRememberMe}
+          fetchMessages={fetchMessages}
           apiTokenInstance={apiTokenInstance}
+          setIsAuthenticated={setIsAuthenticated}
           setApiTokenInstance={setApiTokenInstance}
         />
       ) : (
-        <div className="flex flex-col h-full w-[40%]">
-          <div className="bg-green-600 text-white p-4 rounded-t-lg">
-            <h2 className="text-2xl font-bold">Чат WhatsApp</h2>
+        <div className='flex flex-col h-[90%] w-[40%] m-auto'>
+          <div className='bg-green-600 text-white p-4 rounded-t-lg'>
+            <h2 className='text-2xl font-bold'>Чат WhatsApp</h2>
           </div>
           <Messages messages={messages} />
           <ChatFooter

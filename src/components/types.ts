@@ -17,10 +17,9 @@ export interface ChatFooterProps {
 
 export interface LoginProps {
   idInstance: string;
-  setIdInstance: (value: string) => void;
   apiTokenInstance: string;
+  fetchMessages: () => void;
+  setIdInstance: (value: string) => void;
+  setIsAuthenticated: (value: boolean) => void;
   setApiTokenInstance: (value: string) => void;
-  rememberMe: boolean;
-  setRememberMe: (value: boolean) => void;
-  handleLogin: () => void;
 }
