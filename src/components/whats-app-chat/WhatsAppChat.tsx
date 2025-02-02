@@ -125,7 +125,7 @@ export const WhatsAppChat = () => {
 
   // Обработка нажатия клавиши
   const handleKeyPress = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === 'Enter') {
+    if (event.key === 'Enter' || event.code === 'NumpadEnter') {
       event.preventDefault();
       handleSendMessage();
     }
