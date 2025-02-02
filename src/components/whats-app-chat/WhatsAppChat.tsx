@@ -15,6 +15,7 @@ export const WhatsAppChat = () => {
   const [messages, setMessages] = useState<ArrayMessage[]>([]);
   const [apiTokenInstance, setApiTokenInstance] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [lastReceiptId, setLastReceiptId] = useState<number | null>(null);
 
   // Функция для отправки сообщения
   const sendMessage = async (phoneNumber: string, message: string) => {
@@ -59,7 +60,12 @@ export const WhatsAppChat = () => {
         return;
       }
       if (response.data && response.data.body) {
+        const receiptId = response.data.receiptId;
         const messageData = response.data.body.messageData;
+        // Проверяем, был ли этот receiptId уже обработан
+        if (receiptId === lastReceiptId) {
+          return;
+        }
         if (messageData) {
           let newMessage = '';
           if (
@@ -74,17 +80,16 @@ export const WhatsAppChat = () => {
             newMessage = messageData.textMessageData.text;
           }
           if (newMessage) {
-            const receiptId = response.data.receiptId;
             // Обновляем состояние, добавляя новое сообщение в массив
             setMessages((prevMessages) => [
               ...prevMessages,
               { body: newMessage, sender: 'получатель' },
             ]);
+            // Обновляем последний обработанный receiptId
+            setLastReceiptId(receiptId);
             await deleteNotification(receiptId);
           }
         } else {
-          // Если messageData отсутствует, проверяем receiptId
-          const receiptId = response.data.receiptId;
           if (receiptId) {
             await deleteNotification(receiptId);
           }
@@ -118,6 +123,14 @@ export const WhatsAppChat = () => {
     }
   };
 
+  // Обработка нажатия клавиши
+  const handleKeyPress = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      handleSendMessage();
+    }
+  };
+
   // Вызов fetchMessages с интервалом
   useEffect(() => {
     if (isAuthenticated) {
@@ -147,6 +160,7 @@ export const WhatsAppChat = () => {
             message={message}
             setMessage={setMessage}
             phoneNumber={phoneNumber}
+            handleKeyPress={handleKeyPress}
             setPhoneNumber={setPhoneNumber}
             handleSendMessage={handleSendMessage}
           />

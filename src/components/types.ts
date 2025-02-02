@@ -13,6 +13,7 @@ export interface ChatFooterProps {
   message: string;
   setMessage: (value: string) => void;
   handleSendMessage: () => void;
+  handleKeyPress: (event: React.KeyboardEvent<HTMLTextAreaElement>) => void;
 }
 
 export interface LoginProps {
