@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 
 import { Login } from '../login/Login';
 import { ArrayMessage } from '../types';
-import { API_URL, SECONDS } from '../constants';
+import { API_URL } from '../constants';
 import { Messages } from '../message/Messages';
 import { ChatFooter } from '../chat-footer/ChatFooter';
 
@@ -44,12 +44,7 @@ export const WhatsAppChat = () => {
   const fetchMessages = async () => {
     try {
       const response = await axios.get(
-        `${API_URL}/waInstance${idInstance}/receiveNotification/${apiTokenInstance}`,
-        {
-          params: {
-            receiveTimeout: SECONDS,
-          },
-        }
+        `${API_URL}/waInstance${idInstance}/receiveNotification/${apiTokenInstance}`
       );
       if (response.status !== 200) {
         console.error('Ошибка при получении сообщений:', response.data);
@@ -75,9 +70,9 @@ export const WhatsAppChat = () => {
             newMessage = messageData.extendedTextMessageData.text;
           } else if (
             messageData.textMessageData &&
-            messageData.textMessageData.text
+            messageData.textMessageData.textMessage
           ) {
-            newMessage = messageData.textMessageData.text;
+            newMessage = messageData.textMessageData.textMessage;
           }
           if (newMessage) {
             // Обновляем состояние, добавляя новое сообщение в массив

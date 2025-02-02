@@ -7,7 +7,7 @@ export const Messages = ({ messages }: MessageProps) => {
         {messages?.map((message, index) => (
           <li
             key={index}
-            className={`my-2 p-2 w-[70%] rounded-lg ${
+            className={`my-2 p-2 max-w-[70%] rounded-lg ${
               message.sender === 'отправленное'
                 ? 'bg-green-500 text-white self-end rounded-br-none'
                 : 'bg-gray-300 self-start rounded-bl-none'
